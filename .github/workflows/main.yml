@@ -1,38 +1,30 @@
 name: Build Optimizer Tree
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
   build:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout source
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install MinGW
-        shell: powershell
-        run: choco install mingw -y
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Build Optimizer Tree
+      - name: Build
         shell: cmd
         run: |
-          g++ OptimizerTree.cpp ^
-            -std=c++17 ^
-            -O2 ^
-            -s ^
-            -mwindows ^
-            -static ^
-            -static-libgcc ^
-            -static-libstdc++ ^
-            -o OptimizerTree.exe
+          if not exist build mkdir build
+          cl /nologo /O2 /EHsc /DUNICODE /D_UNICODE /DWIN32 /D_WINDOWS OptimizerTree.cpp /link /SUBSYSTEM:WINDOWS /OUT:build\OptimizerTree.exe
 
-      - name: Upload OptimizerTree.exe
+      - name: Upload EXE
         uses: actions/upload-artifact@v4
         with:
           name: OptimizerTree-Windows
-          path: OptimizerTree.exe
+          path: build\OptimizerTree.exe
