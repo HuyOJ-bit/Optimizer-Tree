@@ -3,13 +3,10 @@ name: Build Optimizer Tree
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
 
 jobs:
   build:
     runs-on: windows-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -17,14 +14,18 @@ jobs:
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Build
+      - name: Build native EXE
         shell: cmd
         run: |
           if not exist build mkdir build
-          cl /nologo /O2 /EHsc /DUNICODE /D_UNICODE /DWIN32 /D_WINDOWS OptimizerTree.cpp /link /SUBSYSTEM:WINDOWS /OUT:build\OptimizerTree.exe
+          rc.exe /nologo src\resource.rc
+          cl.exe /nologo /O2 /GL /EHsc /std:c++17 /DUNICODE /D_UNICODE /c src\OptimizerTree.cpp /Fo:build\OptimizerTree.obj
+          link.exe /nologo /LTCG /SUBSYSTEM:WINDOWS build\OptimizerTree.obj resource.res shell32.lib user32.lib gdi32.lib advapi32.lib /OUT:build\OptimizerTree.exe
+          del /q build\OptimizerTree.obj
+          del /q resource.res
 
-      - name: Upload EXE
+      - name: Upload single EXE
         uses: actions/upload-artifact@v4
         with:
-          name: OptimizerTree-Windows
-          path: build\OptimizerTree.exe
+          name: OptimizerTree
+          path: build/OptimizerTree.exe
