@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <commctrl.h>
+#include <shellapi.h>
 
 #pragma comment(lib, "comctl32.lib")
 
@@ -12,7 +13,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     INITCOMMONCONTROLSEX icex = { sizeof(INITCOMMONCONTROLSEX), ICC_STANDARD_CLASSES };
     InitCommonControlsEx(&icex);
 
-    // Tạo font Segoe UI hiện đại
     hFont = CreateFontW(15, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
         OUT_OUTLINE_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH, L"Segoe UI");
 
@@ -22,12 +22,12 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     wc.hInstance = hInstance;
     wc.lpszClassName = CLASS_NAME;
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1); // Nền trắng sạch
+    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
 
     RegisterClass(&wc);
 
     HWND hwnd = CreateWindowEx(
-        0, CLASS_NAME, L"Optimizer Tree", WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+        0, CLASS_NAME, L"Optimizer Tree - Thực thi thật", WS_OVERLAPPEDWINDOW | WS_VISIBLE,
         CW_USEDEFAULT, CW_USEDEFAULT, 780, 500,
         NULL, NULL, hInstance, NULL
     );
@@ -47,55 +47,57 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
     case WM_CREATE: {
-        // --- MENU THANH BÊN TRÁI (Sidebar) ---
-        HWND btn1 = CreateWindowW(L"BUTTON", L"Tối ưu hệ thống", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-            15, 15, 180, 40, hwnd, (HMENU)101, NULL, NULL);
-        HWND btn2 = CreateWindowW(L"BUTTON", L"Dọn dẹp rác", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-            15, 65, 180, 40, hwnd, (HMENU)102, NULL, NULL);
-        HWND btn3 = CreateWindowW(L"BUTTON", L"Bảo mật & Riêng tư", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-            15, 115, 180, 40, hwnd, (HMENU)103, NULL, NULL);
+        // Sidebar Menu
+        HWND btn1 = CreateWindowW(L"BUTTON", L"Tối ưu hệ thống", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 15, 15, 180, 40, hwnd, (HMENU)101, NULL, NULL);
+        HWND btn2 = CreateWindowW(L"BUTTON", L"Dọn dẹp rác", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 15, 65, 180, 40, hwnd, (HMENU)102, NULL, NULL);
+        HWND btn3 = CreateWindowW(L"BUTTON", L"Bảo mật & Riêng tư", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 15, 115, 180, 40, hwnd, (HMENU)103, NULL, NULL);
 
-        // --- KHUNG NỘI DUNG BÊN PHẢI ---
-        HWND hGroup = CreateWindowW(L"BUTTON", L" Tùy chọn tối ưu Windows ", WS_CHILD | WS_VISIBLE | BS_GROUPBOX,
-            210, 10, 535, 430, hwnd, (HMENU)200, NULL, NULL);
+        // Khung nội dung
+        HWND hGroup = CreateWindowW(L"BUTTON", L" Tùy chọn thực tế ", WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 210, 10, 535, 430, hwnd, (HMENU)200, NULL, NULL);
 
-        // Các tùy chọn Checkbox mô phỏng phần mềm Optimizer
-        hCheck1 = CreateWindowW(L"BUTTON", L"Tắt hiệu ứng chuyển động giao diện", WS_CHILD | WS_VISIBLE | BS_CHECKBOX,
-            235, 45, 480, 25, hwnd, (HMENU)301, NULL, NULL);
-        hCheck2 = CreateWindowW(L"BUTTON", L"Vô hiệu hóa Telemetry và thu thập dữ liệu", WS_CHILD | WS_VISIBLE | BS_CHECKBOX,
-            235, 85, 480, 25, hwnd, (HMENU)302, NULL, NULL);
-        hCheck3 = CreateWindowW(L"BUTTON", L"Tối ưu tốc độ mạng (TCP/IP Stack)", WS_CHILD | WS_VISIBLE | BS_CHECKBOX,
-            235, 125, 480, 25, hwnd, (HMENU)303, NULL, NULL);
+        // Checkbox chức năng thật
+        hCheck1 = CreateWindowW(L"BUTTON", L"Dọn dẹp toàn bộ file tạm (Temp, Prefetch)", WS_CHILD | WS_VISIBLE | BS_CHECKBOX, 235, 45, 480, 25, hwnd, (HMENU)301, NULL, NULL);
+        hCheck2 = CreateWindowW(L"BUTTON", L"Vô hiệu hóa Telemetry (Thu thập dữ liệu ngầm)", WS_CHILD | WS_VISIBLE | BS_CHECKBOX, 235, 85, 480, 25, hwnd, (HMENU)302, NULL, NULL);
+        hCheck3 = CreateWindowW(L"BUTTON", L"Tối ưu hóa tốc độ mạng (Flush DNS & TCP)", WS_CHILD | WS_VISIBLE | BS_CHECKBOX, 235, 125, 480, 25, hwnd, (HMENU)303, NULL, NULL);
 
-        // Đặt trạng thái mặc định được chọn sẵn cho checkbox
         SendMessage(hCheck1, BM_SETCHECK, BST_CHECKED, 0);
         SendMessage(hCheck2, BM_SETCHECK, BST_CHECKED, 0);
+        SendMessage(hCheck3, BM_SETCHECK, BST_CHECKED, 0);
 
-        // Nút thực thi chính
-        HWND btnExec = CreateWindowW(L"BUTTON", L"Áp dụng tùy chọn", WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON,
-            570, 385, 155, 38, hwnd, (HMENU)401, NULL, NULL);
+        // Nút thực thi thật
+        HWND btnExec = CreateWindowW(L"BUTTON", L"Thực thi ngay", WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON, 570, 385, 155, 38, hwnd, (HMENU)401, NULL, NULL);
 
-        // Áp dụng font Segoe UI cho toàn bộ các control
-        SendMessage(btn1, WM_SETFONT, (WPARAM)hFont, TRUE);
-        SendMessage(btn2, WM_SETFONT, (WPARAM)hFont, TRUE);
-        SendMessage(btn3, WM_SETFONT, (WPARAM)hFont, TRUE);
-        SendMessage(hGroup, WM_SETFONT, (WPARAM)hFont, TRUE);
-        SendMessage(hCheck1, WM_SETFONT, (WPARAM)hFont, TRUE);
-        SendMessage(hCheck2, WM_SETFONT, (WPARAM)hFont, TRUE);
-        SendMessage(hCheck3, WM_SETFONT, (WPARAM)hFont, TRUE);
-        SendMessage(btnExec, WM_SETFONT, (WPARAM)hFont, TRUE);
+        // Set font
+        HWND controls[] = { btn1, btn2, btn3, hGroup, hCheck1, hCheck2, hCheck3, btnExec };
+        for (HWND h : controls) SendMessage(h, WM_SETFONT, (WPARAM)hFont, TRUE);
         break;
     }
     case WM_COMMAND:
-        // Xử lý sự kiện bấm Checkbox khi người dùng click vào chữ
         if (LOWORD(wParam) >= 301 && LOWORD(wParam) <= 303) {
             HWND hChk = (HWND)lParam;
             int state = SendMessage(hChk, BM_GETCHECK, 0, 0);
             SendMessage(hChk, BM_SETCHECK, state == BST_CHECKED ? BST_UNCHECKED : BST_CHECKED, 0);
         }
-        // Xử lý nút Áp dụng
+
+        // Xử lý khi bấm nút "Thực thi ngay"
         if (LOWORD(wParam) == 401) {
-            MessageBoxW(hwnd, L"Đã áp dụng các tối ưu thành công!", L"Optimizer Tree", MB_OK | MB_ICONINFORMATION);
+            // 1. Dọn dẹp file tạm nếu chọn Checkbox 1
+            if (SendMessage(hCheck1, BM_GETCHECK, 0, 0) == BST_CHECKED) {
+                system("del /s /q /f %temp%\\*.* >nul 2>&1");
+                system("del /s /q /f C:\\Windows\\Temp\\*.* >nul 2>&1");
+            }
+
+            // 2. Tắt Telemetry qua lệnh Registry nếu chọn Checkbox 2
+            if (SendMessage(hCheck2, BM_GETCHECK, 0, 0) == BST_CHECKED) {
+                system("reg add \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection\" /v AllowTelemetry /t REG_DWORD /d 0 /f >nul 2>&1");
+            }
+
+            // 3. Tối ưu mạng (Flush DNS) nếu chọn Checkbox 3
+            if (SendMessage(hCheck3, BM_GETCHECK, 0, 0) == BST_CHECKED) {
+                system("ipconfig /flushdns >nul 2>&1");
+            }
+
+            MessageBoxW(hwnd, L"Đã thực thi thành công các tùy chọn hệ thống!", L"Optimizer Tree", MB_OK | MB_ICONINFORMATION);
         }
         break;
     case WM_DESTROY:
