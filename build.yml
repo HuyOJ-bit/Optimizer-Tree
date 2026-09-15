@@ -18,11 +18,7 @@ jobs:
         shell: cmd
         run: |
           if not exist build mkdir build
-          rc.exe /nologo src\resource.rc
-          cl.exe /nologo /O2 /GL /EHsc /std:c++17 /DUNICODE /D_UNICODE /c src\OptimizerTree.cpp /Fo:build\OptimizerTree.obj
-          link.exe /nologo /LTCG /SUBSYSTEM:WINDOWS build\OptimizerTree.obj resource.res shell32.lib user32.lib gdi32.lib advapi32.lib /OUT:build\OptimizerTree.exe
-          del /q build\OptimizerTree.obj
-          del /q resource.res
+          cl.exe /nologo /O2 /EHsc /std:c++17 /DUNICODE /D_UNICODE OptimizerTree.cpp /link /SUBSYSTEM:WINDOWS shell32.lib user32.lib gdi32.lib advapi32.lib /OUT:build\OptimizerTree.exe
 
       - name: Upload single EXE
         uses: actions/upload-artifact@v4
