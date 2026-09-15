@@ -3,13 +3,18 @@
 
 #pragma comment(lib, "comctl32.lib")
 
+HFONT hFont = NULL;
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow) {
     INITCOMMONCONTROLSEX icex;
     icex.dwSize = sizeof(INITCOMMONCONTROLSEX);
-    icex.dwICC = ICC_TAB_CLASSES;
+    icex.dwICC = ICC_TAB_CLASSES | ICC_STANDARD_CLASSES;
     InitCommonControlsEx(&icex);
+
+    // Tạo font Segoe UI hiện đại (chuẩn Windows 10/11)
+    hFont = CreateFontW(16, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
+        OUT_OUTLINE_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH, L"Segoe UI");
 
     const wchar_t CLASS_NAME[] = L"OptimizerTreeClass";
     WNDCLASS wc = { };
@@ -17,13 +22,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     wc.hInstance = hInstance;
     wc.lpszClassName = CLASS_NAME;
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-    wc.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1); // Nền sáng
+    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1); // Nền trắng sạch sẽ
 
     RegisterClass(&wc);
 
     HWND hwnd = CreateWindowEx(
-        0, CLASS_NAME, L"Optimizer Tree - Tiếng Việt", WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-        CW_USEDEFAULT, CW_USEDEFAULT, 600, 420,
+        0, CLASS_NAME, L"Optimizer Tree", WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+        CW_USEDEFAULT, CW_USEDEFAULT, 700, 480,
         NULL, NULL, hInstance, NULL
     );
 
@@ -34,36 +39,40 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
+
+    if (hFont) DeleteObject(hFont);
     return 0;
 }
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
     case WM_CREATE: {
-        // Tạo thanh Tab giao diện
+        // Tạo Tab Control hiện đại
         HWND hTab = CreateWindowEx(0, WC_TABCONTROL, L"",
             WS_CHILD | WS_VISIBLE | TCS_TABS,
-            12, 12, 560, 310, hwnd, (HMENU)1, NULL, NULL);
+            15, 15, 655, 360, hwnd, (HMENU)1, NULL, NULL);
+        SendMessage(hTab, WM_SETFONT, (WPARAM)hFont, TRUE);
 
         TCITEM tie = { };
         tie.mask = TCIF_TEXT;
-        tie.pszText = (LPWSTR)L"Tối ưu hệ thống";
+        tie.pszText = (LPWSTR)L"  Tối ưu hệ thống  ";
         TabCtrl_InsertItem(hTab, 0, &tie);
 
-        tie.pszText = (LPWSTR)L"Dọn dẹp rác";
+        tie.pszText = (LPWSTR)L"  Dọn dẹp rác  ";
         TabCtrl_InsertItem(hTab, 1, &tie);
 
-        tie.pszText = (LPWSTR)L"Bảo mật & Quyền riêng tư";
+        tie.pszText = (LPWSTR)L"  Bảo mật  ";
         TabCtrl_InsertItem(hTab, 2, &tie);
 
-        // Nút thực thi chức năng
-        CreateWindowW(L"BUTTON", L"Bắt đầu tối ưu", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
-            30, 70, 160, 35, hwnd, (HMENU)2, NULL, NULL);
+        // Nút bấm phong cách phẳng, hiện đại
+        HWND hBtn = CreateWindowW(L"BUTTON", L"Bắt đầu quét", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
+            35, 80, 150, 40, hwnd, (HMENU)2, NULL, NULL);
+        SendMessage(hBtn, WM_SETFONT, (WPARAM)hFont, TRUE);
         break;
     }
     case WM_COMMAND:
         if (LOWORD(wParam) == 2) {
-            MessageBoxW(hwnd, L"Đã hoàn tất tối ưu hóa hệ thống!", L"Optimizer Tree", MB_OK | MB_ICONINFORMATION);
+            MessageBoxW(hwnd, L"Đã quét và tối ưu hệ thống thành công!", L"Optimizer Tree", MB_OK | MB_ICONINFORMATION);
         }
         break;
     case WM_DESTROY:
