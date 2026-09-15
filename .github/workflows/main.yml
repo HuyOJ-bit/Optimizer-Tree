@@ -1,0 +1,38 @@
+name: Build Optimizer Tree
+
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Install MinGW
+        shell: powershell
+        run: choco install mingw -y
+
+      - name: Build resources
+        shell: cmd
+        run: |
+          windres src\resource.rc -O coff -o resource.o
+
+      - name: Build Optimizer Tree
+        shell: cmd
+        run: |
+          g++ src\OptimizerTree.cpp resource.o ^
+            -std=c++17 -O2 -s -mwindows ^
+            -static ^
+            -static-libgcc ^
+            -static-libstdc++ ^
+            -o OptimizerTree.exe
+
+      - name: Upload EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: OptimizerTree-Windows
+          path: OptimizerTree.exe
