@@ -11,10 +11,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
       - name: Build native EXE
         shell: cmd
         run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
           if not exist build mkdir build
           rc.exe /nologo src\resource.rc
           cl.exe /nologo /O2 /GL /EHsc /std:c++17 /DUNICODE /D_UNICODE /c src\OptimizerTree.cpp /Fo:build\OptimizerTree.obj
